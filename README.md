@@ -57,11 +57,11 @@ davros.greigin.sydney  Backup Successful     Cache Active         2  AD Up
 ```
 If you add the "-QueryOnly" switch to the above it won't trash the cache, just query the status to check it's OK. If you have some kind of automated health checks, this might be a good one to add to your schedule!
 ### It logs too!
-With his generous consent I've ~~stolen~~included [Pat Richard's]("https://ucunleashed.com") logging function, so you'll find relatively detailed logs - sans password  though, naturally - in the /logs/ folder it creates where the script lives.
+With his generous consent I've ~~stolen~~ included [Pat Richard's]("https://ucunleashed.com") logging function, so you'll find relatively detailed logs - sans password  though, naturally - in the /logs/ folder it creates where the script lives.
 Running it with the extra -verbose or -debug switches I've included will spray more info to screen if you're needing some assistance debugging it, but hopefully you won't encounter too many problems beyond the obvious issues with typos in the FQDN or bad  REST credentials.
 ### Did it Work?
 The SBC's Alarm/Event History is another way you can confirm the script reset the cache, and if you're automating it this will be an effective human-viewable way of keeping tabs on it.
-<a href="https://greiginsydney.com/wp-content/uploads/2018/08/SBC-AlarmEventHistory.jpg"><img title="SBC-AlarmEventHistory" src="https://greiginsydney.com/wp-content/uploads/2018/08/SBC-AlarmEventHistory.jpg" border="0" alt="SBC-AlarmEventHistory" width="600" /></a>
+<img title="SBC-AlarmEventHistory" src="https://user-images.githubusercontent.com/11004787/79121380-84a47600-7dd8-11ea-8fce-719d723d7488.png" border="0" alt="SBC-AlarmEventHistory" width="600" />
 
 You can also have the SBC send these events as SNMP traps to your NMS. And no I don't know why my DC was uncontactable at midnight. Puzzling.
 ### Auto Update
