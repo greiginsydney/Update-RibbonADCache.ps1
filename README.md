@@ -2,7 +2,7 @@
 Run or schedule this script to force an update of the AD cache on your Ribbon SBC
 
 Visitors browsing <a href="https://greiginsydney.com/category/sonus/" target="_blank"> the Ribbon/Sonus category</a> on my blog will quickly notice that I've written about the Sonus/Ribbon REST interface on and off for years now, as it's such a handy way of peeking and poking into the SBC without interacting with the browser. And  so it came to pass last week that when presented with a challenge, I've again resorted to REST and PowerShell to deliver the fix.
-### The challenge &ndash; refresh the AD Cache
+### The challenge - refresh the AD Cache
 My customer is planning on migrating a couple of thousand users to Skype for Business quite gradually, and for that we've proposed the fairly standard upstream model, with the SBC doing AD lookups to determine if a user is enabled for SfB and thus  decide where to send the call. If you're not familiar with it I drew a picture and added an explanation at the top of <a href="https://greiginsydney.com/tweaking-sonus-message-translations/" target="_blank"> this post back in 2014</a>.
 The catch is that the SBC's minimum refresh period is an hour, and the customer doesn't want to be potentially waiting that long for it to kick in after a user's been migrated.
 Theyre also big users of automation, and so logging into the SBC to clear the cache by hand isn't really an option.
@@ -11,7 +11,7 @@ Thankfully Sonus added the option to clear the cache to their REST interface, an
 ### Examples
 If you just run the script on its own, it will prompt you for the FQDN and credentials, then go about its business:
 ```powershell
-PS C:\&gt; .\Update-RibbonADCache.ps1
+PS C:\> .\Update-RibbonADCache.ps1
 About to login
 SBC FQDN                          : mysbc.greigin.sydney
 REST login name                   : REST
@@ -57,11 +57,12 @@ davros.greigin.sydney  Backup Successful     Cache Active         2  AD Up
 ```
 If you add the "-QueryOnly" switch to the above it won't trash the cache, just query the status to check it's OK. If you have some kind of automated health checks, this might be a good one to add to your schedule!
 ### It logs too!
-With his generous consent I've <span style="text-decoration: line-through;">stolen</span> included <a rel="noopener" href="https://ucunleashed.com" target="_blank">Pat Richard's</a> logging function, so you'll find relatively detailed logs - sans password  though, naturally - in the /logs/ folder it creates where the script lives.
+With his generous consent I've ~~stolen~~included [Pat Richard's]("https://ucunleashed.com") logging function, so you'll find relatively detailed logs - sans password  though, naturally - in the /logs/ folder it creates where the script lives.
 Running it with the extra -verbose or -debug switches I've included will spray more info to screen if you're needing some assistance debugging it, but hopefully you won't encounter too many problems beyond the obvious issues with typos in the FQDN or bad  REST credentials.
 ### Did it Work?
 The SBC's Alarm/Event History is another way you can confirm the script reset the cache, and if you're automating it this will be an effective human-viewable way of keeping tabs on it.
 <a href="https://greiginsydney.com/wp-content/uploads/2018/08/SBC-AlarmEventHistory.jpg"><img title="SBC-AlarmEventHistory" src="https://greiginsydney.com/wp-content/uploads/2018/08/SBC-AlarmEventHistory.jpg" border="0" alt="SBC-AlarmEventHistory" width="600" /></a>
+
 You can also have the SBC send these events as SNMP traps to your NMS. And no I don't know why my DC was uncontactable at midnight. Puzzling.
 ### Auto Update
 I've added an update-checking component so it will let you know as updates become available. You can suppress the update check by running it with the "-SkipUpdateCheck" parameter, which you should remember to add if you're running the script  via a scheduled task or some other automated/unattended means.
@@ -74,5 +75,5 @@ I've added an update-checking component so it will let you know as updates becom
 
 <br>
 
-This script was originally published at [https://greiginsydney.com/get-ribbonsbcuptime-ps1/](https://greiginsydney.com/get-ribbonsbcuptime-ps1/).
+This script was originally published at [https://greiginsydney.com/update-ribbonadcache-ps1](https://greiginsydney.com/update-ribbonadcache-ps1).
 
