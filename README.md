@@ -67,8 +67,15 @@ You can also have the SBC send these events as SNMP traps to your NMS. And no I 
 ### Auto Update
 I've added an update-checking component so it will let you know as updates become available. You can suppress the update check by running it with the "-SkipUpdateCheck" parameter, which you should remember to add if you're running the script  via a scheduled task or some other automated/unattended means.
 ### Revision History
-1st August 2018. This is the initial release.  
- 
+v1.1: 23rd October 2021
+
+- Changed fn 'BasicHandler' to accept varying 'xml' responses from the SBC
+- Updated the REST queries to all loop through BasicHandler
+
+v1.0: 1st August 2018
+
+- This is the initial release
+- With thanks to Pat Richard for the auto-update and logging modules.
 <br>
 
 \- G.
