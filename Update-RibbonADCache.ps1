@@ -1,47 +1,47 @@
-<#  
-.SYNOPSIS  
+<#
+.SYNOPSIS
 This script will login to the REST account in your SBC and refresh the AD cache.
 
-.DESCRIPTION  
+.DESCRIPTION
 This script will login to the REST account in your SBC and refresh the AD cache. Add the "-QueryOnly" switch for it to look but not touch.
 Outputs an object per configured Domain Controller with the relevant settings/results.
 
 
-.NOTES  
-    Version				: 1.0
+.NOTES
+	Version				: 1.0
 	Date				: 1st August 2018
 	Author    			: Greig Sheridan
-	
+
 	Revision History 	:
-				
+
 			Wishlist / TODO:
 				#?
-				
+
 			v1.0: 1st August 2018
 				With thanks to Pat Richard for the auto-update and logging modules.
-					
-					
 
-.LINK  
-    https://greiginsydney.com/Update-RibbonADCache.ps1
+
+
+.LINK
+	https://greiginsydney.com/Update-RibbonADCache.ps1
 
 .EXAMPLE
 	.\Update-RibbonADCache.ps1
- 
+
 	Description
 	-----------
-    With no input parameters passed to it, the script will prompt you for an SBC FQDN & some REST credentials before refreshing the cache, then 
+	With no input parameters passed to it, the script will prompt you for an SBC FQDN & some REST credentials before refreshing the cache, then
 	querying the status and reporting the output to screen.
 
 .EXAMPLE
 	.\Update-RibbonADCache.ps1 -SbcFQDN mySbc.greigin.sydney -RestLogin REST -RestPassword P@ssword1 -QueryOnly -SkipUpdateCheck
-	
+
 	Description
 	-----------
-    Running the script with the above combination of parameters will execute a non-invasive health check of your SBC's AD cache. Capture the returned
+	Running the script with the above combination of parameters will execute a non-invasive health check of your SBC's AD cache. Capture the returned
 	object and add this to your daily automatic health checks!
 
-	
+
 .PARAMETER SbcFQDN
 	String. The FQDN of your SBC.
 
@@ -53,7 +53,7 @@ Outputs an object per configured Domain Controller with the relevant settings/re
 
 .PARAMETER QueryOnly
 	Boolean. Set this and the script will only query and then report the status of the configured domain controllers.
-	
+
 .PARAMETER SkipUpdateCheck
 	Boolean. Skips the automatic check for an Update. Courtesy of Pat: http://www.ucunleashed.com/3168
 
@@ -61,12 +61,12 @@ Outputs an object per configured Domain Controller with the relevant settings/re
 
 [CmdletBinding(SupportsShouldProcess = $False)]
 Param(
-	
+
 	[string]$SbcFQDN,
 	[string]$RestLogin,
 	[string]$RestPassword,
 	[switch]$QueryOnly,
-	
+
 	[switch]$SkipUpdateCheck
 )
 
@@ -75,7 +75,7 @@ Param(
 # Setup hash tables--------------
 #--------------------------------
 
-$ADStatusLookup = @{'0' = 'AD Up'; '1' = 'AD Down'} 
+$ADStatusLookup = @{'0' = 'AD Up'; '1' = 'AD Down'}
 $ADCacheStatusLookup = @{'0' = 'Cache Disabled'; '1' = 'Cache Building'; '2' = 'Cache Updating'; '3' = 'Cache Active'; '4' = 'Cache Failed'; `
 						'5' = 'Cache Backup'; '6' = 'Cache Truncated'; '7' = 'Cache Not Applicable'; '8' = 'Cache Incomplete'}
 $ADBackupStatusLookup = @{'0' = 'Backup Successful'; '1' = 'Backup Failed'; '2' = 'Backup Disabled'; '3' = 'Backup Not Applicable'; '4' = 'Backup Truncated'; `
@@ -90,48 +90,48 @@ $ADBackupStatusLookup = @{'0' = 'Backup Successful'; '1' = 'Backup Failed'; '2' 
 function Get-UpdateInfo
 {
   <#
-      .SYNOPSIS
-      Queries an online XML source for version information to determine if a new version of the script is available.
+	  .SYNOPSIS
+	  Queries an online XML source for version information to determine if a new version of the script is available.
 	  *** This version customised by Greig Sheridan. @greiginsydney https://greiginsydney.com ***
 
-      .DESCRIPTION
-      Queries an online XML source for version information to determine if a new version of the script is available.
+	  .DESCRIPTION
+	  Queries an online XML source for version information to determine if a new version of the script is available.
 
-      .NOTES
-      Version               : 1.2 - See changelog at https://ucunleashed.com/3168 for fixes & changes introduced with each version
-      Wish list             : Better error trapping
-      Rights Required       : N/A
-      Sched Task Required   : No
-      Lync/Skype4B Version  : N/A
-      Author/Copyright      : © Pat Richard, Office Servers and Services (Skype for Business) MVP - All Rights Reserved
-      Email/Blog/Twitter    : pat@innervation.com  https://ucunleashed.com  @patrichard
-      Donations             : https://www.paypal.me/PatRichard
-      Dedicated Post        : https://ucunleashed.com/3168
-      Disclaimer            : You running this script/function means you will not blame the author(s) if this breaks your stuff. This script/function 
-                            is provided AS IS without warranty of any kind. Author(s) disclaim all implied warranties including, without limitation, 
-                            any implied warranties of merchantability or of fitness for a particular purpose. The entire risk arising out of the use 
-                            or performance of the sample scripts and documentation remains with you. In no event shall author(s) be held liable for 
-                            any damages whatsoever (including, without limitation, damages for loss of business profits, business interruption, loss 
-                            of business information, or other pecuniary loss) arising out of the use of or inability to use the script or 
-                            documentation. Neither this script/function, nor any part of it other than those parts that are explicitly copied from 
-                            others, may be republished without author(s) express written permission. Author(s) retain the right to alter this 
-                            disclaimer at any time. For the most up to date version of the disclaimer, see https://ucunleashed.com/code-disclaimer.
-      Acknowledgements      : Reading XML files 
-                            http://stackoverflow.com/questions/18509358/how-to-read-xml-in-powershell
-                            http://stackoverflow.com/questions/20433932/determine-xml-node-exists
-      Assumptions           : ExecutionPolicy of AllSigned (recommended), RemoteSigned, or Unrestricted (not recommended)
-      Limitations           : 
-      Known issues          : 
+	  .NOTES
+	  Version               : 1.2 - See changelog at https://ucunleashed.com/3168 for fixes & changes introduced with each version
+	  Wish list             : Better error trapping
+	  Rights Required       : N/A
+	  Sched Task Required   : No
+	  Lync/Skype4B Version  : N/A
+	  Author/Copyright      : © Pat Richard, Office Servers and Services (Skype for Business) MVP - All Rights Reserved
+	  Email/Blog/Twitter    : pat@innervation.com  https://ucunleashed.com  @patrichard
+	  Donations             : https://www.paypal.me/PatRichard
+	  Dedicated Post        : https://ucunleashed.com/3168
+	  Disclaimer            : You running this script/function means you will not blame the author(s) if this breaks your stuff. This script/function
+							is provided AS IS without warranty of any kind. Author(s) disclaim all implied warranties including, without limitation,
+							any implied warranties of merchantability or of fitness for a particular purpose. The entire risk arising out of the use
+							or performance of the sample scripts and documentation remains with you. In no event shall author(s) be held liable for
+							any damages whatsoever (including, without limitation, damages for loss of business profits, business interruption, loss
+							of business information, or other pecuniary loss) arising out of the use of or inability to use the script or
+							documentation. Neither this script/function, nor any part of it other than those parts that are explicitly copied from
+							others, may be republished without author(s) express written permission. Author(s) retain the right to alter this
+							disclaimer at any time. For the most up to date version of the disclaimer, see https://ucunleashed.com/code-disclaimer.
+	  Acknowledgements      : Reading XML files
+							http://stackoverflow.com/questions/18509358/how-to-read-xml-in-powershell
+							http://stackoverflow.com/questions/20433932/determine-xml-node-exists
+	  Assumptions           : ExecutionPolicy of AllSigned (recommended), RemoteSigned, or Unrestricted (not recommended)
+	  Limitations           :
+	  Known issues          :
 
-      .EXAMPLE
-      Get-UpdateInfo -Title 'Update-RibbonADCache.ps1'
+	  .EXAMPLE
+	  Get-UpdateInfo -Title 'Update-RibbonADCache.ps1'
 
-      Description
-      -----------
-      Runs function to check for updates to script called 'Update-RibbonADCache.ps1'.
+	  Description
+	  -----------
+	  Runs function to check for updates to script called 'Update-RibbonADCache.ps1'.
 
-      .INPUTS
-      None. You cannot pipe objects to this script.
+	  .INPUTS
+	  None. You cannot pipe objects to this script.
   #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	param (
@@ -146,7 +146,7 @@ function Get-UpdateInfo
 			# ------------------ TLS 1.2 fixup from https://github.com/chocolatey/choco/wiki/Installation#installing-with-restricted-tls
 			$securityProtocolSettingsOriginal = [Net.ServicePointManager]::SecurityProtocol
 			try {
-			  # Set TLS 1.2 (3072). Use integers because the enumeration values for TLS 1.2 won't exist in .NET 4.0, even though they are 
+			  # Set TLS 1.2 (3072). Use integers because the enumeration values for TLS 1.2 won't exist in .NET 4.0, even though they are
 			  # addressable if .NET 4.5+ is installed (.NET 4.5 is an in-place upgrade).
 			  [Net.ServicePointManager]::SecurityProtocol = 3072
 			} catch {
@@ -188,13 +188,13 @@ function Get-UpdateInfo
 		else
 		{
 		}
-	
+
 	} # end function Get-UpdateInfo
 	catch
 	{
 		write-verbose -message 'Caught error in Get-UpdateInfo'
 		if ($Global:Debug)
-		{				
+		{
 			$Global:error | Format-List -Property * -Force #This dumps to screen as white for the time being. I haven't been able to get it to dump in red
 		}
 	}
@@ -203,173 +203,173 @@ function Get-UpdateInfo
 
 function Write-Log {
   <#
-      .SYNOPSIS
-      Extensive function to write data to either the console screen, a log file, and/or a Windows event log.
+	  .SYNOPSIS
+	  Extensive function to write data to either the console screen, a log file, and/or a Windows event log.
 
-      .DESCRIPTION
-      Extensive function to write data to either the console screen, a log file, and/or a Windows event log. Data can be written as info, warning, error, and includes indentation, time stamps, etc.
+	  .DESCRIPTION
+	  Extensive function to write data to either the console screen, a log file, and/or a Windows event log. Data can be written as info, warning, error, and includes indentation, time stamps, etc.
 
-      .NOTES
-      Version               : 3.2
-      Wish list             : Better error trapping
-      Rights Required       : Local administrator on server if writing to event log(s)
-      Sched Task Required   : No
-      Lync/Skype4B Version  : N/A
-      Author/Copyright      : © Pat Richard, Office Servers and Services (Skype for Business) MVP - All Rights Reserved
-      Email/Blog/Twitter		: pat@innervation.com 	https://www.ucunleashed.com @patrichard
-      Donations             : https://www.paypal.me/PatRichard
-      Dedicated Post        : http://poshcode.org/6894
-      Disclaimer            : You running this script/function means you will not blame the author(s) if this breaks your stuff. This script/function 
-                          is provided AS IS without warranty of any kind. Author(s) disclaim all implied warranties including, without limitation, 
-                          any implied warranties of merchantability or of fitness for a particular purpose. The entire risk arising out of the use 
-                          or performance of the sample scripts and documentation remains with you. In no event shall author(s) be held liable for 
-                          any damages whatsoever (including, without limitation, damages for loss of business profits, business interruption, loss 
-                          of business information, or other pecuniary loss) arising out of the use of or inability to use the script or 
-                          documentation. Neither this script/function, nor any part of it other than those parts that are explicitly copied from 
-                          others, may be republished without author(s) express written permission. Author(s) retain the right to alter this 
-                          disclaimer at any time. For the most up to date version of the disclaimer, see https://ucunleashed.com/code-disclaimer.
-      Acknowledgements      : Based on an original function by Any Arismendi, along with updates by others
-                          http://poshcode.org/2566
-                            
-                          Test for log names and sources
-                          http://powershell.com/cs/blogs/tips/archive/2013/06/10/testing-event-log-names-and-sources.aspx
-                            
-                          Writing to different event logs and sources registered to a single event log
-                          http://social.technet.microsoft.com/Forums/en-US/winserverpowershell/thread/e172f039-ce88-4c9f-b19a-0dd6dc568fa0/
-      Assumptions           : ExecutionPolicy of AllSigned (recommended), RemoteSigned or Unrestricted (not recommended)
-      Limitations           : Writing to event logs requires admin rights
-      Known issues          :
+	  .NOTES
+	  Version               : 3.2
+	  Wish list             : Better error trapping
+	  Rights Required       : Local administrator on server if writing to event log(s)
+	  Sched Task Required   : No
+	  Lync/Skype4B Version  : N/A
+	  Author/Copyright      : © Pat Richard, Office Servers and Services (Skype for Business) MVP - All Rights Reserved
+	  Email/Blog/Twitter		: pat@innervation.com 	https://www.ucunleashed.com @patrichard
+	  Donations             : https://www.paypal.me/PatRichard
+	  Dedicated Post        : http://poshcode.org/6894
+	  Disclaimer            : You running this script/function means you will not blame the author(s) if this breaks your stuff. This script/function
+						  is provided AS IS without warranty of any kind. Author(s) disclaim all implied warranties including, without limitation,
+						  any implied warranties of merchantability or of fitness for a particular purpose. The entire risk arising out of the use
+						  or performance of the sample scripts and documentation remains with you. In no event shall author(s) be held liable for
+						  any damages whatsoever (including, without limitation, damages for loss of business profits, business interruption, loss
+						  of business information, or other pecuniary loss) arising out of the use of or inability to use the script or
+						  documentation. Neither this script/function, nor any part of it other than those parts that are explicitly copied from
+						  others, may be republished without author(s) express written permission. Author(s) retain the right to alter this
+						  disclaimer at any time. For the most up to date version of the disclaimer, see https://ucunleashed.com/code-disclaimer.
+	  Acknowledgements      : Based on an original function by Any Arismendi, along with updates by others
+						  http://poshcode.org/2566
 
-      .EXAMPLE
-      .\
+						  Test for log names and sources
+						  http://powershell.com/cs/blogs/tips/archive/2013/06/10/testing-event-log-names-and-sources.aspx
 
-      Description
-      -----------
+						  Writing to different event logs and sources registered to a single event log
+						  http://social.technet.microsoft.com/Forums/en-US/winserverpowershell/thread/e172f039-ce88-4c9f-b19a-0dd6dc568fa0/
+	  Assumptions           : ExecutionPolicy of AllSigned (recommended), RemoteSigned or Unrestricted (not recommended)
+	  Limitations           : Writing to event logs requires admin rights
+	  Known issues          :
+
+	  .EXAMPLE
+	  .\
+
+	  Description
+	  -----------
 
 
-      .INPUTS
-      System.String. You cannot pipe objects to this script.
+	  .INPUTS
+	  System.String. You cannot pipe objects to this script.
 
-      .OUTPUTS
-      System.String
+	  .OUTPUTS
+	  System.String
   #>
   [CmdletBinding(SupportsShouldProcess = $true)]
   param(
-    # The type of message to be logged. Alias is 'type'.
-    [Parameter(ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
-    [ValidateSet('Error', 'Warn', 'Info', 'Verbose')]
-    [ValidateNotNullOrEmpty()]
-    [string] $Level = 'Info',
+	# The type of message to be logged. Alias is 'type'.
+	[Parameter(ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
+	[ValidateSet('Error', 'Warn', 'Info', 'Verbose')]
+	[ValidateNotNullOrEmpty()]
+	[string] $Level = 'Info',
 
-    # The message to be logged.
-    [Parameter(ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Mandatory = $true, HelpMessage = 'No message specified.')]
-    [ValidateNotNullOrEmpty()]
-    [string] $Message,
+	# The message to be logged.
+	[Parameter(ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Mandatory = $true, HelpMessage = 'No message specified.')]
+	[ValidateNotNullOrEmpty()]
+	[string] $Message,
 
-    # Specifies that $message should not the sent to the log file.
-    [Parameter(ValueFromPipelineByPropertyName = $true)]
-    [switch] $NoLog,
+	# Specifies that $message should not the sent to the log file.
+	[Parameter(ValueFromPipelineByPropertyName = $true)]
+	[switch] $NoLog,
 
-    # Specifies to not display the message to the console.
-    [Parameter(ValueFromPipelineByPropertyName = $true)]
-    [switch] $NoConsole,
+	# Specifies to not display the message to the console.
+	[Parameter(ValueFromPipelineByPropertyName = $true)]
+	[switch] $NoConsole,
 
-    # The number of spaces to indent the message in the log file.
-    [Parameter(ValueFromPipelineByPropertyName = $true)]
-    [ValidateRange(1,30)]
-    [ValidateNotNullOrEmpty()]
-    [int] $Indent = 0,
+	# The number of spaces to indent the message in the log file.
+	[Parameter(ValueFromPipelineByPropertyName = $true)]
+	[ValidateRange(1,30)]
+	[ValidateNotNullOrEmpty()]
+	[int] $Indent = 0,
 
-    # Specifies what color the text should be be displayed on the console. Ignored when switch 'NoConsoleOut' is specified.
-    [Parameter(ValueFromPipelineByPropertyName = $true)]
-    [ValidateSet('Black', 'DarkMagenta', 'DarkRed', 'DarkBlue', 'DarkGreen', 'DarkCyan', 'DarkYellow', 'Red', 'Blue', 'Green', 'Cyan', 'Magenta', 'Yellow', 'DarkGray', 'Gray', 'White')]
-    [ValidateNotNullOrEmpty()]
-    [String] $ConsoleForeground = 'White',
+	# Specifies what color the text should be be displayed on the console. Ignored when switch 'NoConsoleOut' is specified.
+	[Parameter(ValueFromPipelineByPropertyName = $true)]
+	[ValidateSet('Black', 'DarkMagenta', 'DarkRed', 'DarkBlue', 'DarkGreen', 'DarkCyan', 'DarkYellow', 'Red', 'Blue', 'Green', 'Cyan', 'Magenta', 'Yellow', 'DarkGray', 'Gray', 'White')]
+	[ValidateNotNullOrEmpty()]
+	[String] $ConsoleForeground = 'White',
 
-    # Existing log file is deleted when this is specified. Alias is 'Overwrite'.
-    [Parameter(ValueFromPipelineByPropertyName = $true)]
-    [Switch] $Clobber,
+	# Existing log file is deleted when this is specified. Alias is 'Overwrite'.
+	[Parameter(ValueFromPipelineByPropertyName = $true)]
+	[Switch] $Clobber,
 
-    # The name of the system event log, e.g. 'Application'. The Skype for Business log is still called 'Lync Server'. Note that writing to the system event log requires elevated permissions.
-    [Parameter(ValueFromPipelineByPropertyName = $true)]
-    [ValidateSet('Application', 'System', 'Security', 'Lync Server', 'Microsoft Office Web Apps')]
-    [ValidateNotNullOrEmpty()]
-    [String] $EventLogName,
+	# The name of the system event log, e.g. 'Application'. The Skype for Business log is still called 'Lync Server'. Note that writing to the system event log requires elevated permissions.
+	[Parameter(ValueFromPipelineByPropertyName = $true)]
+	[ValidateSet('Application', 'System', 'Security', 'Lync Server', 'Microsoft Office Web Apps')]
+	[ValidateNotNullOrEmpty()]
+	[String] $EventLogName,
 
-    # The name to appear as the source attribute for the system event log entry. This is ignored unless 'EventLogName' is specified.
-    [Parameter(ValueFromPipelineByPropertyName = $true)]
-    [ValidateNotNullOrEmpty()]
-    [String] $EventSource = $([IO.FileInfo] $MyInvocation.ScriptName).Name,
+	# The name to appear as the source attribute for the system event log entry. This is ignored unless 'EventLogName' is specified.
+	[Parameter(ValueFromPipelineByPropertyName = $true)]
+	[ValidateNotNullOrEmpty()]
+	[String] $EventSource = $([IO.FileInfo] $MyInvocation.ScriptName).Name,
 
-    # The ID to appear as the event ID attribute for the system event log entry. This is ignored unless 'EventLogName' is specified.
-    [Parameter(ValueFromPipelineByPropertyName = $true)]
-    [ValidateRange(1,65535)]
-    [ValidateNotNullOrEmpty()]
-    [int] $EventID = 1,
+	# The ID to appear as the event ID attribute for the system event log entry. This is ignored unless 'EventLogName' is specified.
+	[Parameter(ValueFromPipelineByPropertyName = $true)]
+	[ValidateRange(1,65535)]
+	[ValidateNotNullOrEmpty()]
+	[int] $EventID = 1,
 
-    # The text encoding for the log file. Default is ASCII.
-    [Parameter(ValueFromPipelineByPropertyName = $true)]
-    [ValidateSet('Unicode','Byte','BigEndianUnicode','UTF8','UTF7','UTF32','ASCII','Default','OEM')]
-    [ValidateNotNullOrEmpty()]
-    [String] $LogEncoding = 'ASCII',
+	# The text encoding for the log file. Default is ASCII.
+	[Parameter(ValueFromPipelineByPropertyName = $true)]
+	[ValidateSet('Unicode','Byte','BigEndianUnicode','UTF8','UTF7','UTF32','ASCII','Default','OEM')]
+	[ValidateNotNullOrEmpty()]
+	[String] $LogEncoding = 'ASCII',
 
-    #Divider line to be used to separate sections in the log file
-    [Parameter(ValueFromPipelineByPropertyName = $true, ParameterSetName = 'Divider')]
-    [ValidateNotNullOrEmpty()]
-    [string] $LogDivider = '+------------------------------+'
+	#Divider line to be used to separate sections in the log file
+	[Parameter(ValueFromPipelineByPropertyName = $true, ParameterSetName = 'Divider')]
+	[ValidateNotNullOrEmpty()]
+	[string] $LogDivider = '+------------------------------+'
   ) # end of param block
   BEGIN{
-	
+
 	[string]$TargetFolder = split-path ($MyInvocation.scriptname)
 	#[string] $LogPath = "$TargetFolder\logs\update-RibbonADCache" + " {0:yyyy-MM-dd hh-mmtt}.log" -f (Get-Date)
 	[string] $LogPath = "$TargetFolder\logs\update-RibbonADCache" + " {0:yyyy-MM-dd}.log" -f (Get-Date)
-    [string]$LogFolder = Split-Path -Path $LogPath -Parent
-    if (-not (Test-Path -Path $LogFolder)){
-      $null = New-Item -Path $LogFolder -ItemType Directory
-    }
+	[string]$LogFolder = Split-Path -Path $LogPath -Parent
+	if (-not (Test-Path -Path $LogFolder)){
+	  $null = New-Item -Path $LogFolder -ItemType Directory
+	}
   } # end BEGIN
   PROCESS{
-    try {
-      $Message = $($Message.trim())
-      $msg = '{0} : {1} : {2}{3}' -f (Get-Date -Format 'yyyy-MM-dd HH:mm:ss'), ($Level.ToUpper()).PadRight(5," "), ('  ' * $Indent), $Message
-      if (-not ($NoConsole)){
-        switch ($Level) {
-          'Error' {$Host.UI.WriteErrorLine("$Message")}
-          'Warn' {Write-Warning -Message $Message}
-          'Info' {Write-Host $Message -ForegroundColor $ConsoleForeground}
-          'Verbose' {Write-Verbose -Message $Message}
-        }
-      }
-      if (-not ($NoLog)){
-        if ($Clobber) {
-          $msg | Out-File -FilePath $LogPath -Encoding $LogEncoding -Force
-        } else {
-          $msg | Out-File -FilePath $LogPath -Encoding $LogEncoding -Append
-        }
-      }
-      if ($EventLogName) {
-        if (-not $EventSource) {
-          [string] $EventSource = $([IO.FileInfo] $MyInvocation.ScriptName).Name
-        }
+	try {
+	  $Message = $($Message.trim())
+	  $msg = '{0} : {1} : {2}{3}' -f (Get-Date -Format 'yyyy-MM-dd HH:mm:ss'), ($Level.ToUpper()).PadRight(5," "), ('  ' * $Indent), $Message
+	  if (-not ($NoConsole)){
+		switch ($Level) {
+		  'Error' {$Host.UI.WriteErrorLine("$Message")}
+		  'Warn' {Write-Warning -Message $Message}
+		  'Info' {Write-Host $Message -ForegroundColor $ConsoleForeground}
+		  'Verbose' {Write-Verbose -Message $Message}
+		}
+	  }
+	  if (-not ($NoLog)){
+		if ($Clobber) {
+		  $msg | Out-File -FilePath $LogPath -Encoding $LogEncoding -Force
+		} else {
+		  $msg | Out-File -FilePath $LogPath -Encoding $LogEncoding -Append
+		}
+	  }
+	  if ($EventLogName) {
+		if (-not $EventSource) {
+		  [string] $EventSource = $([IO.FileInfo] $MyInvocation.ScriptName).Name
+		}
 
-        if(-not [Diagnostics.EventLog]::SourceExists($EventSource)) {
-          [Diagnostics.EventLog]::CreateEventSource($EventSource, $EventLogName)
-        }
+		if(-not [Diagnostics.EventLog]::SourceExists($EventSource)) {
+		  [Diagnostics.EventLog]::CreateEventSource($EventSource, $EventLogName)
+		}
 
-        switch ($Level) {
-          'Error' {$EntryType = 'Error'}
-          'Warn'  {$EntryType = 'Warning'}
-          'Info'  {$EntryType = 'Information'}
-          'Verbose' {$EntryType = 'Information'}
-          Default  {$EntryType = 'Information'}
-        }
-        Write-EventLog -LogName $EventLogName -Source $EventSource -EventId 1 -EntryType $EntryType -Message $Message
-      }
-      $msg = ''
-    } # end try
-    catch {
-      Throw "Failed to create log entry in: '$LogPath'. The error was: '$_'."
-    } # end catch
+		switch ($Level) {
+		  'Error' {$EntryType = 'Error'}
+		  'Warn'  {$EntryType = 'Warning'}
+		  'Info'  {$EntryType = 'Information'}
+		  'Verbose' {$EntryType = 'Information'}
+		  Default  {$EntryType = 'Information'}
+		}
+		Write-EventLog -LogName $EventLogName -Source $EventSource -EventId 1 -EntryType $EntryType -Message $Message
+	  }
+	  $msg = ''
+	} # end try
+	catch {
+	  Throw "Failed to create log entry in: '$LogPath'. The error was: '$_'."
+	} # end catch
   } # end PROCESS
   END{} # end END
 } # end function Write-Log
@@ -382,7 +382,7 @@ function Read-UserInput
 	[string] $default,
 	[boolean] $displayOnly
 	)
-	
+
 	#"Padright" done a little differently:
 	while (($prompt.length + $default.length) -le 30)
 	{
@@ -397,7 +397,7 @@ function Read-UserInput
 		#Don't show the square brackets if there's no default value
 		$prompt =  "{0}   " -f $prompt
 	}
-	
+
 	if ($DisplayOnly)
 	{
 		Write-Host $prompt
@@ -412,15 +412,15 @@ function Read-UserInput
 	return $response
 }
 
- 
+
 ### Return the result of the request
 Function BasicHandler
 {
-    Param($MyResult)
- 
-    [xml]$XmlResult = $MyResult.Substring(5)
+	Param($MyResult)
+
+	[xml]$XmlResult = $MyResult.Substring(5)
 	$xmlresult
-    if($XmlResult.root.status.http_code.contains("200"))
+	if($XmlResult.root.status.http_code.contains("200"))
 	{
 		$info = @{
 			"Success" = $True;
@@ -450,11 +450,11 @@ function Login
 	[string] $RestLogin,
 	[string] $RestPassword
 	)
-		
+
 add-type @"
 	using System.Net;
 	using System.Security.Cryptography.X509Certificates;
- 
+
 	public class IDontCarePolicy : ICertificatePolicy {
 		public IDontCarePolicy() {}
 		public bool CheckValidationResult(
@@ -464,8 +464,8 @@ add-type @"
 		}
 	}
 "@
-	[System.Net.ServicePointManager]::CertificatePolicy = new-object IDontCarePolicy                                         
-	 
+	[System.Net.ServicePointManager]::CertificatePolicy = new-object IDontCarePolicy
+
 	$BodyValue = "Username=$RestLogin&Password=$RestPassword"
 	$url = "https://$SbcFqdn/rest/login"
 	try
@@ -498,8 +498,8 @@ add-type @"
 # THE FUN STARTS HERE -----------
 #--------------------------------
 
-$ScriptVersion = "1.0" 
-$Error.Clear()   
+$ScriptVersion = "1.0"
+$Error.Clear()
 $Global:Debug = $psboundparameters.debug.ispresent
 $Global:SessionVar = $null #This is the ID of the session we have open to the SBC
 
@@ -512,7 +512,7 @@ If ($PsVersionTable.PsVersion.Major -lt 3)
 	exit
 }
 
-[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
 if ($skipupdatecheck)
 {
@@ -552,7 +552,7 @@ try
 			Write-Log -Level Error -Message ("Login failed. Error result = $($Result.Result)") -indent 1
 			break
 		}
-		
+
 		if ($QueryOnly)
 		{
 			Write-Log -Level Info -Message "Skipping clearing the Cache"
@@ -572,7 +572,7 @@ try
 				Write-Log -Level Error -Message ("Refresh of the Cache failed. Error result = $($Result.Result)")
 			}
 		}
-		
+
 		# Query the DCs
 		$url = "https://$SbcFQDN/rest/domaincontroller"
 		$Query = Invoke-RestMethod -Uri $url -Method GET -WebSession $Global:SessionVar -verbose:$false
